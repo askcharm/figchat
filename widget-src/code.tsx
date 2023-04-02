@@ -247,7 +247,7 @@ function FableChat() {
 			...messages,
 			{
 				role:
-					messages[messages.length - 1].role === 'user'
+					messages[messages.length - 1]?.role === 'user'
 						? 'assistant'
 						: 'user',
 				content: ''
