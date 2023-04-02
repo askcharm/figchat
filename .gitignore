@@ -6,3 +6,6 @@ node_modules
 out/
 dist/
 code.js
+
+# macOS
+.DS_Store
