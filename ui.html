@@ -1,0 +1,44 @@
+<script>
+	window.onmessage = async (event) => {
+		if (event.data.pluginMessage.type === 'submit') {
+			const {messages, systemMessage, key} = event.data.pluginMessage
+			const request = new XMLHttpRequest()
+
+			request.open(
+				'POST',
+				'https://api.openai.com/xv1/chat/completions',
+				true
+			)
+			request.setRequestHeader('Content-Type', 'application/json')
+			request.setRequestHeader(
+				'Authorization',
+				`Bearer ${key}`
+			)
+
+			request.onload = () => {
+				debugger
+				const response = JSON.parse(request.response)
+				console.log({response})
+				const assistantMessage =
+					response.choices[0].message.content.trim()
+
+				const newMessages = [
+					...messages,
+					{role: 'assistant', content: assistantMessage}
+				]
+
+				window.parent.postMessage({pluginMessage: newMessages}, '*')
+			}
+
+			request.send(
+				JSON.stringify({
+					model: 'gpt-4',
+					messages: [
+						...Object.values(messages),
+						{role: 'assistant', content: ''}
+					]
+				})
+			)
+		}
+	}
+</script>
