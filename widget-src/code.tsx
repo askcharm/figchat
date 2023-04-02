@@ -54,6 +54,10 @@ function FableChat() {
 		{}
 	)
 
+	const [model, setModel] = useSyncedState('model', 'gpt-4')
+	const [temp, setTemp] = useSyncedState('temp', '0.7')
+	const [topP, setTopP] = useSyncedState('top_p', '1')
+
 	usePropertyMenu(
 		[
 			{
@@ -67,10 +71,10 @@ function FableChat() {
 					},
 					{
 						option: 'gpt-3.5-turbo',
-						label: 'GPT-3.5 Turbo'
+						label: 'GPT-3.5'
 					}
 				],
-				selectedOption: 'gpt-4'
+				selectedOption: model
 			},
 			{itemType: 'separator'},
 			{
@@ -125,7 +129,7 @@ function FableChat() {
 						label: '1'
 					}
 				],
-				selectedOption: '0.7'
+				selectedOption: temp
 			},
 			{
 				propertyName: 'top_p',
@@ -179,7 +183,7 @@ function FableChat() {
 						label: '1'
 					}
 				],
-				selectedOption: '1'
+				selectedOption: topP
 			},
 			{itemType: 'separator'},
 			{
@@ -211,8 +215,8 @@ function FableChat() {
 				icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"></path><path d="M3 13a9 9 0 1 0 3-7.7L3 8"></path></svg>`
 			}
 		],
-		async (event) => {
-			switch (event.propertyName) {
+		async ({propertyName, propertyValue}) => {
+			switch (propertyName) {
 				case 'toggleTitle':
 					setTitleVisible((v) => !v)
 					break
@@ -222,8 +226,17 @@ function FableChat() {
 				case 'toggleKey':
 					setKeyVisible((v) => !v)
 					break
-				case 'reset':
+				case 'resetChat':
 					setMessages(SampleMessages)
+					break
+				case 'model':
+					if (propertyValue !== undefined) setModel(propertyValue)
+					break
+				case 'temp':
+					if (propertyValue !== undefined) setTemp(propertyValue)
+					break
+				case 'topP':
+					if (propertyValue !== undefined) setTopP(propertyValue)
 					break
 			}
 		}
@@ -242,6 +255,11 @@ function FableChat() {
 		])
 	}
 
+	const cancel = async () => {
+		setLoadState('ready')
+		figma.ui.postMessage({type: 'cancel'})
+	}
+
 	const submit = async () => {
 		setLoadState('loading')
 		waitForTask(
@@ -252,7 +270,10 @@ function FableChat() {
 					messages: systemMessage.content
 						? [systemMessage, ...messages]
 						: messages,
-					key: keyMessage.content
+					key: keyMessage.content,
+					temp: +temp,
+					topP: +topP,
+					model
 				})
 
 				figma.ui.onmessage = async (response: {
@@ -537,23 +558,47 @@ function FableChat() {
 				<AutoLayout
 					cornerRadius={4}
 					fill={
-						keyMessage.content
+						loadState === 'loading'
+							? '#CB0909'
+							: keyMessage.content
 							? '#A953FE'
 							: {r: 0, g: 0, b: 0, a: 0.2}
 					}
-					onClick={keyMessage.content ? submit : undefined}
+					onClick={
+						keyMessage.content
+							? loadState !== 'loading'
+								? submit
+								: cancel
+							: undefined
+					}
 					verticalAlignItems="center"
 					horizontalAlignItems="center"
 					padding={{vertical: 6, horizontal: 8}}
 					spacing={6}
-					hoverStyle={keyMessage.content ? {fill: '#832DDA'} : {}}
+					hoverStyle={
+						keyMessage.content
+							? {
+									fill:
+										loadState === 'loading'
+											? '#B50808'
+											: '#832DDA'
+							  }
+							: {}
+					}
 					tooltip={
 						keyMessage.content ? '' : 'Enter your OpenAI Key first'
 					}
 				>
-					<SVG
-						src={`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`}
-					/>
+					{loadState !== 'loading' && (
+						<SVG
+							src={`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>`}
+						/>
+					)}
+					{loadState === 'loading' && (
+						<SVG
+							src={`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`}
+						/>
+					)}
 					<Text
 						fontFamily="Inter"
 						fontSize={14}
@@ -562,7 +607,7 @@ function FableChat() {
 						fill="#fff"
 						fontWeight={600}
 					>
-						Submit
+						{loadState === 'loading' ? 'Cancel' : 'Submit'}
 					</Text>
 				</AutoLayout>
 			</AutoLayout>

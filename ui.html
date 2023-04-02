@@ -1,7 +1,11 @@
 <script>
 	window.onmessage = async (event) => {
+		if (event.data.pluginMessage.type === 'cancel') {
+			window.activeRequest.abort()
+		}
+
 		if (event.data.pluginMessage.type === 'submit') {
-			const {messages, key} = event.data.pluginMessage
+			const {messages, key, model, temp, topP} = event.data.pluginMessage
 
 			// const xhr = new XMLHttpRequest()
 			// xhr.open('POST', 'https://api.openai.com/v1/chat/completions', true)
@@ -60,6 +64,7 @@
 			// )
 
 			const request = new XMLHttpRequest()
+			window.activeRequest = request
 			debugger
 
 			request.open(
@@ -93,6 +98,8 @@
 			request.send(
 				JSON.stringify({
 					model: 'gpt-4',
+					temperature: temp,
+					top_p: topP,
 					messages
 				})
 			)
