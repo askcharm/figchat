@@ -261,12 +261,13 @@ function FableChat() {
 	}
 
 	const submit = async () => {
+		const stream = true
 		setLoadState('loading')
 		waitForTask(
 			new Promise((resolve) => {
 				figma.showUI(__html__, {visible: false})
 				figma.ui.postMessage({
-					type: 'submit',
+					type: stream ? 'submit-stream' : 'submit',
 					messages: systemMessage.content
 						? [systemMessage, ...messages]
 						: messages,
@@ -276,44 +277,53 @@ function FableChat() {
 					model
 				})
 
-				figma.ui.onmessage = async (response: {
-					assistantMessage?: string
-					error?: Record<string, string>
-				}) => {
-					if (response.error) {
-						setLoadState('error')
-						setError(response.error)
-					} else if (response.assistantMessage) {
-						const newMessages = [
-							...messages,
-							{
-								role: 'assistant',
-								content: response.assistantMessage
+				if (stream) {
+					// STREAMING
+					figma.ui.onmessage = async (response: {
+						messages?: {role: string; content: string}[]
+						error?: Record<string, string>
+						state?: 'streaming' | 'complete'
+					}) => {
+						if (response.error) {
+							setLoadState('error')
+							setError(response.error)
+							// @ts-ignore
+							resolve()
+						} else if (response.messages) {
+							setMessages(response.messages)
+							if (response.state === 'complete') {
+								setLoadState('ready')
+								// @ts-ignore
+								resolve()
 							}
-						]
-						setMessages(newMessages)
-						setLoadState('ready')
+						}
 					}
-					// @ts-ignore
-					resolve()
 				}
 
-				// STREAMING
-				// figma.ui.onmessage = async (response: {
-				// 	messages?: {role: string; content: string}[]
-				// 	error?: Record<string, string>
-				// 	state?: 'streaming' | 'complete'
-				// }) => {
-				// 	if (response.error) {
-				// 		setLoadState('error')
-				// 		setError(response.error)
-				// 	} else if (response.messages) {
-				// 		setMessages(response.messages)
-				// 		if (response.state === 'complete') setLoadState('ready')
-				// 	}
-				// 	// @ts-ignore
-				// 	resolve()
-				// }
+				if (!stream) {
+					// NON-STREAMING
+					figma.ui.onmessage = async (response: {
+						assistantMessage?: string
+						error?: Record<string, string>
+					}) => {
+						if (response.error) {
+							setLoadState('error')
+							setError(response.error)
+						} else if (response.assistantMessage) {
+							const newMessages = [
+								...messages,
+								{
+									role: 'assistant',
+									content: response.assistantMessage
+								}
+							]
+							setMessages(newMessages)
+							setLoadState('ready')
+						}
+						// @ts-ignore
+						resolve()
+					}
+				}
 			})
 		)
 	}

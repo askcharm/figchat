@@ -4,64 +4,86 @@
 			window.activeRequest.abort()
 		}
 
+		if (event.data.pluginMessage.type === 'submit-stream') {
+			console.log('EXISTS RUNNING REQUEST', !!window.activeRequest)
+			const {messages, key, model, temp, topP} = event.data.pluginMessage
+			const xhr = new XMLHttpRequest()
+			xhr.open('POST', 'https://api.openai.com/v1/chat/completions', true)
+			xhr.setRequestHeader('Content-Type', 'application/json')
+			xhr.setRequestHeader('Authorization', `Bearer ${key}`)
+			xhr.onload = () => {
+				try {
+					// try to parse the response
+					const response = JSON.parse(xhr.response)
+					if (response.error) {
+						// ERROR
+						debugger
+						window.parent.postMessage(
+							{pluginMessage: {error: response.error}},
+							'*'
+						)
+						return
+					}
+				} catch (e) {
+					// Unparseable response
+					// It is likely a stream response
+				}
+			}
+			xhr.onreadystatechange = function () {
+				console.log('READY STATE CHANGE', xhr.responseText)
+				const messagesWithoutSystem = messages.filter(
+					(msg) => msg.role !== 'system'
+				)
+				if (xhr.readyState === 3 && xhr.status === 200) {
+					console.log('STREAMING')
+					// STREAMING
+					const completion = extractAndCombineData(xhr.responseText)
+					console.log(completion)
+					window.parent.postMessage(
+						{
+							pluginMessage: {
+								messages: [
+									...messagesWithoutSystem,
+									completion
+								],
+								state: 'streaming'
+							}
+						},
+						'*'
+					)
+				}
+				if (xhr.readyState === 4 && xhr.status === 200) {
+					// COMPLETE
+					window.activeRequest = undefined
+					const completion = extractAndCombineData(xhr.responseText)
+					console.log(completion)
+					window.parent.postMessage(
+						{
+							pluginMessage: {
+								messages: [
+									...messagesWithoutSystem.filter(
+										(msg) => msg.role !== 'system'
+									),
+									completion
+								],
+								state: 'complete'
+							}
+						},
+						'*'
+					)
+				}
+			}
+			xhr.send(
+				JSON.stringify({
+					model: 'gpt-4',
+					messages,
+					stream: true
+				})
+			)
+		}
+
 		if (event.data.pluginMessage.type === 'submit') {
 			const {messages, key, model, temp, topP} = event.data.pluginMessage
-
-			// const xhr = new XMLHttpRequest()
-			// xhr.open('POST', 'https://api.openai.com/v1/chat/completions', true)
-			// xhr.setRequestHeader('Content-Type', 'application/json')
-			// xhr.setRequestHeader('Authorization', `Bearer ${key}`)
-			// xhr.onload = () => {
-			// 	const response = JSON.parse(xhr.response)
-			// 	if (response.error) {
-			// 		// ERROR
-			// 		debugger
-			// 		window.parent.postMessage(
-			// 			{pluginMessage: {error: response.error}},
-			// 			'*'
-			// 		)
-			// 		return
-			// 	}
-			// }
-			// xhr.onreadystatechange = function () {
-			// 	console.log('READY STATE CHANGE', xhr.responseText)
-			// 	if (xhr.readyState === 3 && xhr.status === 200) {
-			// 		console.log('STREAMING')
-			// 		// STREAMING
-			// 		const completion = extractAndCombineData(xhr.responseText)
-			// 		console.log(completion)
-			// 		// window.parent.postMessage(
-			// 		// 	{
-			// 		// 		pluginMessage: {
-			// 		// 			messages: [...messages, completion],
-			// 		// 			state: 'streaming'
-			// 		// 		}
-			// 		// 	},
-			// 		// 	'*'
-			// 		// )
-			// 	}
-			// 	if (xhr.readyState === 4 && xhr.status === 200) {
-			// 		// COMPLETE
-			// 		const completion = extractAndCombineData(xhr.responseText)
-			// 		console.log(completion)
-			// 		window.parent.postMessage(
-			// 			{
-			// 				pluginMessage: {
-			// 					messages: [...messages, completion],
-			// 					state: 'complete'
-			// 				}
-			// 			},
-			// 			'*'
-			// 		)
-			// 	}
-			// }
-			// xhr.send(
-			// 	JSON.stringify({
-			// 		model: 'gpt-4',
-			// 		messages,
-			// 		stream: true
-			// 	})
-			// )
 
 			const request = new XMLHttpRequest()
 			window.activeRequest = request
@@ -76,6 +98,7 @@
 			request.setRequestHeader('Authorization', `Bearer ${key}`)
 
 			request.onload = () => {
+				window.activeRequest = undefined
 				const response = JSON.parse(request.response)
 				if (response.error) {
 					debugger
