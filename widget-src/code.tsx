@@ -74,6 +74,7 @@ function FigChat() {
 	const [temp, setTemp] = useSyncedState('temp', '0.7')
 	const [topP, setTopP] = useSyncedState('top_p', '1')
 	const [widened, setWidened] = useSyncedState('widened', false)
+	const [color, setColor] = useSyncedState('color', '#ffffff')
 
 	const isGPT = () => model.startsWith('gpt')
 
@@ -256,6 +257,23 @@ function FigChat() {
 					: `<?xml version="1.0" encoding="UTF-8"?><svg width="20px" height="20px" stroke-width="1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="white"><path d="M8.5 9.5L6 12l2.5 2.5M15.5 9.5L18 12l-2.5 2.5" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path><path d="M2 15V9a4 4 0 014-4h12a4 4 0 014 4v6a4 4 0 01-4 4H6a4 4 0 01-4-4z" stroke="white" stroke-width="1"></path></svg>`
 			},
 			{
+				itemType: 'color-selector',
+				propertyName: 'color',
+				tooltip: 'Chat Color',
+				options: [
+					{tooltip: 'Red', option: '#F24822'},
+					{tooltip: 'Yellow', option: '#FFCD29'},
+					{tooltip: 'Green', option: '#14AE5C'},
+					{tooltip: 'Blue', option: '#0D99FF'},
+					{tooltip: 'Purple', option: '#9747FF'},
+					{tooltip: 'Orange', option: '#FFA629'},
+					{tooltip: 'Gray', option: '#B3B3B3'},
+					{tooltip: 'Default', option: '#ffffff'}
+				],
+				selectedOption: color
+			},
+			{itemType: 'separator'},
+			{
 				propertyName: 'resetChat',
 				itemType: 'action',
 				tooltip: 'Reset Chat',
@@ -294,6 +312,9 @@ function FigChat() {
 					break
 				case 'widenNarrow':
 					setWidened((v) => !v)
+					break
+				case 'color':
+					if (propertyValue !== undefined) setColor(propertyValue)
 					break
 				case 'model':
 					if (propertyValue !== undefined) {
@@ -422,7 +443,8 @@ function FigChat() {
 			padding={{top: 15, bottom: 12, left: 12, right: 12}}
 			fill="#fff"
 			cornerRadius={8}
-			stroke={{r: 0, g: 0, b: 0, a: 0.08}}
+			stroke={color ?? {r: 0, g: 0, b: 0, a: 0.08}}
+			strokeWidth={color ? 4 : 1}
 			effect={{
 				type: 'drop-shadow',
 				color: {r: 0, g: 0, b: 0, a: 0.06},
@@ -446,6 +468,7 @@ function FigChat() {
 						placeholder="Chat"
 						horizontalAlignText="center"
 						fontSize={20}
+						fill={color ?? '#000000'}
 					/>
 					<Line
 						stroke="#000000"
