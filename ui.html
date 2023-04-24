@@ -75,55 +75,11 @@
 			}
 			xhr.send(
 				JSON.stringify({
-					model: 'gpt-4',
+					model,
 					messages,
-					stream: true
-				})
-			)
-		}
-
-		if (event.data.pluginMessage.type === 'submit') {
-			const {messages, key, model, temp, topP} = event.data.pluginMessage
-
-			const request = new XMLHttpRequest()
-			window.activeRequest = request
-			debugger
-
-			request.open(
-				'POST',
-				'https://api.openai.com/v1/chat/completions',
-				true
-			)
-			request.setRequestHeader('Content-Type', 'application/json')
-			request.setRequestHeader('Authorization', `Bearer ${key}`)
-
-			request.onload = () => {
-				window.activeRequest = undefined
-				const response = JSON.parse(request.response)
-				if (response.error) {
-					debugger
-					window.parent.postMessage(
-						{pluginMessage: {error: response.error}},
-						'*'
-					)
-					return
-				} else {
-					const assistantMessage =
-						response.choices[0].message.content.trim()
-					debugger
-					window.parent.postMessage(
-						{pluginMessage: {assistantMessage}},
-						'*'
-					)
-				}
-			}
-
-			request.send(
-				JSON.stringify({
-					model: 'gpt-4',
 					temperature: temp,
 					top_p: topP,
-					messages
+					stream: true
 				})
 			)
 		}

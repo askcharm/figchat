@@ -1,3 +1,5 @@
+import {MessageRow} from './MessageRow'
+
 const {widget} = figma
 const {
 	AutoLayout,
@@ -14,15 +16,22 @@ const {
 	useSyncedState
 } = widget
 
-const SampleMessages = [
-	{role: 'user', content: 'Hi'},
-	{role: 'assistant', content: 'Hello!'}
+export type ChatMessage = {
+	role: string
+	content: string
+	expanded: boolean
+}
+
+const SampleMessages: ChatMessage[] = [
+	{role: 'user', content: 'Hi', expanded: true},
+	{role: 'assistant', content: 'Hello!', expanded: true}
 ]
 
-function FableChat() {
-	const [messages, setMessages] = useSyncedState<
-		{role: string; content: string}[]
-	>('messages', SampleMessages)
+function FigChat() {
+	const [messages, setMessages] = useSyncedState<ChatMessage[]>(
+		'messages',
+		SampleMessages
+	)
 
 	const [titleVisible, setTitleVisible] = useSyncedState<boolean>(
 		'titleVisible',
@@ -32,19 +41,26 @@ function FableChat() {
 
 	const [systemMessageVisible, setSystemMessageVisible] =
 		useSyncedState<boolean>('systemMessageVisible', false)
-	const [systemMessage, setSystemMessage] = useSyncedState<{
-		role: 'system'
-		content: string
-	}>('systemMessage', {role: 'system', content: ''})
+	const [systemMessage, setSystemMessage] = useSyncedState<
+		ChatMessage & {
+			role: 'system'
+		}
+	>('systemMessage', {role: 'system', content: '', expanded: true})
 
 	const [keyVisible, setKeyVisible] = useSyncedState<boolean>(
 		'keyVisible',
 		false
 	)
-	const [keyMessage, setKeyMessage] = useSyncedState<{
-		role: 'OpenAI Key'
-		content: string
-	}>('key', {role: 'OpenAI Key', content: ''})
+	const [keyMessage, setKeyMessage] = useSyncedState<
+		ChatMessage & {
+			role: 'OpenAI Key'
+		}
+	>('key', {role: 'OpenAI Key', content: '', expanded: true})
+	const [anthropicKeyMessage, setAnthropicKeyMessage] = useSyncedState<
+		ChatMessage & {
+			role: 'Claude Key'
+		}
+	>('anthropicKey', {role: 'Claude Key', content: '', expanded: true})
 
 	const [loadState, setLoadState] = useSyncedState<
 		'ready' | 'loading' | 'error'
@@ -57,6 +73,9 @@ function FableChat() {
 	const [model, setModel] = useSyncedState('model', 'gpt-4')
 	const [temp, setTemp] = useSyncedState('temp', '0.7')
 	const [topP, setTopP] = useSyncedState('top_p', '1')
+	const [widened, setWidened] = useSyncedState('widened', false)
+
+	const isGPT = () => model.startsWith('gpt')
 
 	usePropertyMenu(
 		[
@@ -72,6 +91,14 @@ function FableChat() {
 					{
 						option: 'gpt-3.5-turbo',
 						label: 'GPT-3.5'
+					},
+					{
+						option: 'claude-v1',
+						label: 'Claude v1'
+					},
+					{
+						option: 'claude-instant-v1',
+						label: 'Claude Instant v1'
 					}
 				],
 				selectedOption: model
@@ -203,11 +230,31 @@ function FableChat() {
 			{
 				propertyName: 'toggleKey',
 				itemType: 'toggle',
-				tooltip: 'Toggle OpenAI Key',
+				tooltip: `Toggle ${isGPT() ? 'OpenAI' : 'Anthropic'} Key`,
 				isToggled: keyVisible,
 				icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>`
 			},
-
+			{itemType: 'separator'},
+			{
+				propertyName: 'expandCollapse',
+				itemType: 'action',
+				tooltip: [systemMessage, ...messages].some(
+					(msg) => msg.expanded
+				)
+					? 'Collapse All Messages'
+					: 'Expand All Messages',
+				icon: [systemMessage, ...messages].some((msg) => msg.expanded)
+					? `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-down-up"><path d="m7 20 5-5 5 5"></path><path d="m7 4 5 5 5-5"></path></svg>`
+					: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-up-down"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>`
+			},
+			{
+				propertyName: 'widenNarrow',
+				itemType: 'action',
+				tooltip: widened ? 'Narrow Chat' : 'Widen Chat',
+				icon: widened
+					? `<?xml version="1.0" encoding="UTF-8"?><svg width="20px" height="20px" stroke-width="1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="white"><path d="M7 9.5L9.5 12 7 14.5M16.5 9.5L14 12l2.5 2.5" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path><path d="M6 5h12a4 4 0 014 4v6a4 4 0 01-4 4H6a4 4 0 01-4-4V9a4 4 0 014-4z" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path></svg>`
+					: `<?xml version="1.0" encoding="UTF-8"?><svg width="20px" height="20px" stroke-width="1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="white"><path d="M8.5 9.5L6 12l2.5 2.5M15.5 9.5L18 12l-2.5 2.5" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"></path><path d="M2 15V9a4 4 0 014-4h12a4 4 0 014 4v6a4 4 0 01-4 4H6a4 4 0 01-4-4z" stroke="white" stroke-width="1"></path></svg>`
+			},
 			{
 				propertyName: 'resetChat',
 				itemType: 'action',
@@ -229,8 +276,45 @@ function FableChat() {
 				case 'resetChat':
 					setMessages(SampleMessages)
 					break
+				case 'expandCollapse':
+					setSystemMessage((msg) => ({
+						...msg,
+						expanded: ![systemMessage, ...messages].some(
+							(msg) => msg.expanded
+						)
+					}))
+					setMessages((messages) =>
+						messages.map((msg) => ({
+							...msg,
+							expanded: ![systemMessage, ...messages].some(
+								(msg) => msg.expanded
+							)
+						}))
+					)
+					break
+				case 'widenNarrow':
+					setWidened((v) => !v)
+					break
 				case 'model':
-					if (propertyValue !== undefined) setModel(propertyValue)
+					if (propertyValue !== undefined) {
+						// Update model
+						setModel(propertyValue)
+
+						// If we're switching between GPT and Claude with default temps set, update the temp
+						if (
+							model.includes('gpt') &&
+							!propertyValue.includes('gpt')
+						) {
+							// GPT to Claude
+							if (temp === '0.7') setTemp('1')
+						} else if (
+							// Claude to GPT
+							!model.includes('gpt') &&
+							propertyValue.includes('gpt')
+						) {
+							if (temp === '1') setTemp('0.7')
+						}
+					}
 					break
 				case 'temp':
 					if (propertyValue !== undefined) setTemp(propertyValue)
@@ -250,7 +334,8 @@ function FableChat() {
 					messages[messages.length - 1]?.role === 'user'
 						? 'assistant'
 						: 'user',
-				content: ''
+				content: '',
+				expanded: true
 			}
 		])
 	}
@@ -280,7 +365,7 @@ function FableChat() {
 				if (stream) {
 					// STREAMING
 					figma.ui.onmessage = async (response: {
-						messages?: {role: string; content: string}[]
+						messages?: ChatMessage[]
 						error?: Record<string, string>
 						state?: 'streaming' | 'complete'
 					}) => {
@@ -314,7 +399,8 @@ function FableChat() {
 								...messages,
 								{
 									role: 'assistant',
-									content: response.assistantMessage
+									content: response.assistantMessage,
+									expanded: true
 								}
 							]
 							setMessages(newMessages)
@@ -369,170 +455,68 @@ function FableChat() {
 					/>
 				</AutoLayout>
 			)}
-			{[
-				...(keyVisible ? [keyMessage] : []),
-				...(systemMessageVisible ? [systemMessage] : []),
-				...messages
-			].map((message, index) => (
-				<AutoLayout direction="vertical" spacing={12} key={index}>
-					<AutoLayout
-						direction="horizontal"
-						spacing={8}
-						padding={{left: 0, vertical: 4}}
-						verticalAlignItems="start"
-					>
-						<AutoLayout width={120}>
-							<AutoLayout
-								padding={{horizontal: 8, vertical: 4}}
-								hoverStyle={{
-									fill: {
-										r: 0,
-										g: 0,
-										b: 0,
-										a: 0.05
-									}
-								}}
-								onClick={
-									message.role === 'system' ||
-									message.role === 'OpenAI Key'
-										? undefined
-										: () => {
-												// Toggle role for msg at this index
-												// Adjust index to account for system message and key message
-												const adjustedIndex =
-													index -
-													(systemMessageVisible
-														? 1
-														: 0) -
-													(keyVisible ? 1 : 0)
-												const newMessages = [
-													...messages
-												]
-												newMessages[
-													adjustedIndex
-												].role =
-													newMessages[adjustedIndex]
-														.role === 'user'
-														? 'assistant'
-														: 'user'
-												setMessages(newMessages)
-										  }
-								}
-								cornerRadius={4}
-								width="hug-contents"
-							>
-								<Text
-									fontFamily="Inter"
-									fontSize={12}
-									letterSpacing={1.2}
-									textCase="upper"
-									horizontalAlignText="left"
-									verticalAlignText="center"
-									height={20}
-									fontWeight={600}
-									width={
-										{
-											system: 57,
-											user: 36,
-											assistant: 78,
-											'OpenAI Key': 83
-										}[message.role]
-									}
-								>
-									{message.role}
-								</Text>
-							</AutoLayout>
-						</AutoLayout>
-						<AutoLayout
-							width={
-								message.role === 'assistant' ||
-								message.role === 'user'
-									? 300
-									: 334
-							}
-							padding={{top: 4}}
-						>
-							<Input
-								width="fill-parent"
-								value={message.content}
-								fontWeight={400}
-								lineHeight={23}
-								onTextEditEnd={(e) => {
-									// If msg is system or key, set appropriate state
-									if (message.role === 'system') {
-										setSystemMessage({
-											...systemMessage,
-											content: e.characters
-										})
-									}
-									if (message.role === 'OpenAI Key') {
-										setKeyMessage({
-											...keyMessage,
-											content: e.characters
-										})
-									}
-									// Otherwise, update msg at this index
-									// Adjust index to account for system message and key message
-									const adjustedIndex =
-										index -
-										(systemMessageVisible ? 1 : 0) -
-										(keyVisible ? 1 : 0)
-									const newMessages = [...messages]
-									newMessages[adjustedIndex].content =
-										e.characters
-									setMessages(newMessages)
-								}}
-								placeholder={
-									{
-										system: 'System Message',
-										'OpenAI Key': 'OpenAI Key'
-									}[message.role] ?? 'Message'
-								}
-								inputBehavior="multiline"
-								paragraphSpacing={8}
-							/>
-						</AutoLayout>
-						{message.role !== 'system' &&
-							message.role !== 'OpenAI Key' && (
-								<AutoLayout
-									direction="horizontal"
-									spacing={8}
-									padding={{vertical: 4, horizontal: 4}}
-									cornerRadius={4}
-									hoverStyle={{
-										fill: {
-											r: 0,
-											g: 0,
-											b: 0,
-											a: 0.05
-										}
-									}}
-									onClick={() => {
-										// Remove msg at this index
-										// Adjust index to account for system message and key message
-										const adjustedIndex =
-											index -
-											(systemMessageVisible ? 1 : 0) -
-											(keyVisible ? 1 : 0)
-										const newMessages = [...messages]
-										newMessages.splice(adjustedIndex, 1)
-										setMessages(newMessages)
-									}}
-								>
-									<SVG
-										src={`<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>`}
-										opacity={0.2}
-									/>
-								</AutoLayout>
-							)}
-					</AutoLayout>
-					<Line
-						stroke="#000000"
-						strokeWidth={1}
-						opacity={0.08}
-						length="fill-parent"
-					/>
-				</AutoLayout>
+			{keyVisible && (
+				<MessageRow
+					message={keyMessage}
+					expandable={false}
+					deleteable={false}
+					placeholder={isGPT() ? 'OpenAI Key' : 'API Key'}
+					widened={widened}
+					roleWidth={isGPT() ? 83 : 70}
+					onUpdateContent={(content: string) => {
+						setKeyMessage({...keyMessage, content})
+					}}
+					onExpandCollapse={(expanded: boolean) => {
+						setKeyMessage({...keyMessage, expanded})
+					}}
+				/>
+			)}
+			{systemMessageVisible && (
+				<MessageRow
+					message={systemMessage}
+					expandable={true}
+					deleteable={false}
+					placeholder="System Message"
+					widened={widened}
+					roleWidth={57}
+					onUpdateContent={(content: string) => {
+						setSystemMessage({...systemMessage, content})
+					}}
+					onExpandCollapse={(expanded: boolean) => {
+						setSystemMessage({...systemMessage, expanded})
+					}}
+				/>
+			)}
+			{messages.map((message, index) => (
+				<MessageRow
+					message={message}
+					index={index}
+					expandable={true}
+					deleteable={true}
+					placeholder="Message"
+					widened={widened}
+					roleWidth={message.role === 'user' ? 36 : 78}
+					onUpdateContent={(content: string) => {
+						const newMessages = [...messages]
+						newMessages[index].content = content
+						setMessages(newMessages)
+					}}
+					onDelete={() => {
+						const newMessages = [...messages]
+						newMessages.splice(index, 1)
+						setMessages(newMessages)
+					}}
+					onExpandCollapse={(expanded: boolean) => {
+						const newMessages = [...messages]
+						newMessages[index].expanded = expanded
+						setMessages(newMessages)
+					}}
+					onToggleRole={(role: string) => {
+						const newMessages = [...messages]
+						newMessages[index].role = role
+						setMessages(newMessages)
+					}}
+				/>
 			))}
 			<AutoLayout
 				direction="horizontal"
@@ -674,4 +658,4 @@ function FableChat() {
 	)
 }
 
-widget.register(FableChat)
+widget.register(FigChat)
