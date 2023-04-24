@@ -463,6 +463,8 @@ function FigChat() {
 					placeholder={isGPT() ? 'OpenAI Key' : 'API Key'}
 					widened={widened}
 					roleWidth={isGPT() ? 83 : 70}
+					roleColor="#A953FE"
+					monospace={true}
 					onUpdateContent={(content: string) => {
 						setKeyMessage({...keyMessage, content})
 					}}
@@ -479,6 +481,7 @@ function FigChat() {
 					placeholder="System Message"
 					widened={widened}
 					roleWidth={57}
+					roleColor="#A953FE"
 					onUpdateContent={(content: string) => {
 						setSystemMessage({...systemMessage, content})
 					}}

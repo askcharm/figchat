@@ -11,6 +11,8 @@ type MessageRowProps = {
 	placeholder?: string
 	widened?: boolean
 	roleWidth?: number
+	roleColor?: string
+	monospace?: boolean
 
 	onDelete?: () => void
 	onExpandCollapse?: (expanded: boolean) => void
@@ -25,6 +27,8 @@ export const MessageRow = ({
 	placeholder,
 	widened,
 	roleWidth,
+	roleColor = '#000000',
+	monospace = false,
 
 	onDelete,
 	onExpandCollapse,
@@ -101,6 +105,7 @@ export const MessageRow = ({
 							height={20}
 							fontWeight={600}
 							width={roleWidth}
+							fill={roleColor}
 						>
 							{message.role}
 						</Text>
@@ -123,6 +128,7 @@ export const MessageRow = ({
 							paragraphSpacing={8}
 							onClick={() => onExpandCollapse?.(true)}
 							fill={{r: 0, g: 0, b: 0, a: 0.5}}
+							fontFamily={monospace ? 'Roboto Mono' : 'Inter'}
 						>
 							{message.content
 								.split('')
@@ -142,6 +148,7 @@ export const MessageRow = ({
 							placeholder={placeholder}
 							height={message.expanded ? 'hug-contents' : 23}
 							paragraphSpacing={8}
+							fontFamily={monospace ? 'Roboto Mono' : 'Inter'}
 						/>
 					)}
 				</AutoLayout>
