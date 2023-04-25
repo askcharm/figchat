@@ -296,7 +296,18 @@ function FigChat() {
 					setKeyVisible((v) => !v)
 					break
 				case 'resetChat':
-					setMessages(SampleMessages)
+					setSystemMessage({
+						role: 'system',
+						content: '',
+						expanded: true
+					})
+					setMessages([
+						{
+							role: 'user',
+							content: '',
+							expanded: true
+						}
+					])
 					break
 				case 'expandCollapse':
 					setSystemMessage((msg) => ({
