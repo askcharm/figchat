@@ -59,12 +59,12 @@ export const MessageRow = ({
 								}
 							}}
 							onClick={() =>
-								onExpandCollapse?.(!message.expanded)
+								onExpandCollapse?.(!message.collapsed)
 							}
 						>
 							<SVG
 								src={
-									message.expanded
+									!message.collapsed
 										? `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg>`
 										: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right"><polyline points="9 18 15 12 9 6"></polyline></svg>`
 								}
@@ -119,7 +119,7 @@ export const MessageRow = ({
 					}
 					padding={{top: 4}}
 				>
-					{!message.expanded && (
+					{message.collapsed && (
 						<Text
 							width="fill-parent"
 							fontWeight={400}
@@ -136,7 +136,7 @@ export const MessageRow = ({
 								.join('') + '...'}
 						</Text>
 					)}
-					{message.expanded && (
+					{!message.collapsed && (
 						<Input
 							width="fill-parent"
 							value={message.content}
@@ -146,7 +146,7 @@ export const MessageRow = ({
 								onUpdateContent?.(e.characters)
 							}}
 							placeholder={placeholder}
-							height={message.expanded ? 'hug-contents' : 23}
+							height={!message.collapsed ? 'hug-contents' : 23}
 							paragraphSpacing={8}
 							fontFamily={monospace ? 'Roboto Mono' : 'Inter'}
 						/>

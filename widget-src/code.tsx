@@ -19,12 +19,12 @@ const {
 export type ChatMessage = {
 	role: string
 	content: string
-	expanded: boolean
+	collapsed: boolean
 }
 
 const SampleMessages: ChatMessage[] = [
-	{role: 'user', content: 'Hi', expanded: true},
-	{role: 'assistant', content: 'Hello!', expanded: true}
+	{role: 'user', content: 'Hi', collapsed: false},
+	{role: 'assistant', content: 'Hello!', collapsed: false}
 ]
 
 function FigChat() {
@@ -45,7 +45,7 @@ function FigChat() {
 		ChatMessage & {
 			role: 'system'
 		}
-	>('systemMessage', {role: 'system', content: '', expanded: true})
+	>('systemMessage', {role: 'system', content: '', collapsed: false})
 
 	const [keyVisible, setKeyVisible] = useSyncedState<boolean>(
 		'keyVisible',
@@ -55,12 +55,12 @@ function FigChat() {
 		ChatMessage & {
 			role: 'OpenAI Key'
 		}
-	>('key', {role: 'OpenAI Key', content: '', expanded: true})
+	>('key', {role: 'OpenAI Key', content: '', collapsed: false})
 	const [anthropicKeyMessage, setAnthropicKeyMessage] = useSyncedState<
 		ChatMessage & {
 			role: 'Claude Key'
 		}
-	>('anthropicKey', {role: 'Claude Key', content: '', expanded: true})
+	>('anthropicKey', {role: 'Claude Key', content: '', collapsed: false})
 
 	const [loadState, setLoadState] = useSyncedState<
 		'ready' | 'loading' | 'error'
@@ -244,11 +244,11 @@ function FigChat() {
 				propertyName: 'expandCollapse',
 				itemType: 'action',
 				tooltip: [systemMessage, ...messages].some(
-					(msg) => msg.expanded
+					(msg) => !msg.collapsed
 				)
 					? 'Collapse All Messages'
 					: 'Expand All Messages',
-				icon: [systemMessage, ...messages].some((msg) => msg.expanded)
+				icon: [systemMessage, ...messages].some((msg) => !msg.collapsed)
 					? `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-down-up"><path d="m7 20 5-5 5 5"></path><path d="m7 4 5 5 5-5"></path></svg>`
 					: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevrons-up-down"><path d="m7 15 5 5 5-5"></path><path d="m7 9 5-5 5 5"></path></svg>`
 			},
@@ -299,29 +299,28 @@ function FigChat() {
 					setSystemMessage({
 						role: 'system',
 						content: '',
-						expanded: true
+						collapsed: false
 					})
 					setMessages([
 						{
 							role: 'user',
 							content: '',
-							expanded: true
+							collapsed: false
 						}
 					])
 					break
 				case 'expandCollapse':
+					// If any messages are expanded, collapse them all
+					// Otherwise, expand them all
 					setSystemMessage((msg) => ({
 						...msg,
-						expanded: ![systemMessage, ...messages].some(
-							(msg) => msg.expanded
-						)
+						collapsed: messages.some((msg) => !msg.collapsed)
 					}))
+
 					setMessages((messages) =>
 						messages.map((msg) => ({
 							...msg,
-							expanded: ![systemMessage, ...messages].some(
-								(msg) => msg.expanded
-							)
+							collapsed: messages.some((msg) => !msg.collapsed)
 						}))
 					)
 					break
@@ -372,7 +371,7 @@ function FigChat() {
 						? 'assistant'
 						: 'user',
 				content: '',
-				expanded: true
+				collapsed: false
 			}
 		])
 	}
@@ -437,7 +436,7 @@ function FigChat() {
 								{
 									role: 'assistant',
 									content: response.assistantMessage,
-									expanded: true
+									collapsed: false
 								}
 							]
 							setMessages(newMessages)
@@ -508,8 +507,8 @@ function FigChat() {
 					onUpdateContent={(content: string) => {
 						setKeyMessage({...keyMessage, content})
 					}}
-					onExpandCollapse={(expanded: boolean) => {
-						setKeyMessage({...keyMessage, expanded})
+					onExpandCollapse={(collapsed: boolean) => {
+						setKeyMessage({...keyMessage, collapsed})
 					}}
 				/>
 			)}
@@ -525,8 +524,8 @@ function FigChat() {
 					onUpdateContent={(content: string) => {
 						setSystemMessage({...systemMessage, content})
 					}}
-					onExpandCollapse={(expanded: boolean) => {
-						setSystemMessage({...systemMessage, expanded})
+					onExpandCollapse={(collapsed: boolean) => {
+						setSystemMessage({...systemMessage, collapsed})
 					}}
 				/>
 			)}
@@ -549,9 +548,9 @@ function FigChat() {
 						newMessages.splice(index, 1)
 						setMessages(newMessages)
 					}}
-					onExpandCollapse={(expanded: boolean) => {
+					onExpandCollapse={(collapsed: boolean) => {
 						const newMessages = [...messages]
-						newMessages[index].expanded = expanded
+						newMessages[index].collapsed = collapsed
 						setMessages(newMessages)
 					}}
 					onToggleRole={(role: string) => {
