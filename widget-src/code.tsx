@@ -74,9 +74,13 @@ function FigChat() {
 	const [temp, setTemp] = useSyncedState('temp', '0.7')
 	const [topP, setTopP] = useSyncedState('top_p', '1')
 	const [widened, setWidened] = useSyncedState('widened', false)
-	const [color, setColor] = useSyncedState('color', '#ffffff')
+
+	// Do not use colorState directly. Use color() instead.
+	// #ffffff is used as a special value to indicate "no color".
+	const [colorState, setColorState] = useSyncedState('color', '#ffffff')
 
 	const isGPT = () => model.startsWith('gpt')
+	const color = () => (colorState === '#ffffff' ? undefined : colorState)
 
 	usePropertyMenu(
 		[
@@ -270,7 +274,7 @@ function FigChat() {
 					{tooltip: 'Gray', option: '#B3B3B3'},
 					{tooltip: 'Default', option: '#ffffff'}
 				],
-				selectedOption: color
+				selectedOption: colorState
 			},
 			{itemType: 'separator'},
 			{
@@ -314,7 +318,8 @@ function FigChat() {
 					setWidened((v) => !v)
 					break
 				case 'color':
-					if (propertyValue !== undefined) setColor(propertyValue)
+					if (propertyValue !== undefined)
+						setColorState(propertyValue)
 					break
 				case 'model':
 					if (propertyValue !== undefined) {
@@ -443,8 +448,9 @@ function FigChat() {
 			padding={{top: 15, bottom: 12, left: 12, right: 12}}
 			fill="#fff"
 			cornerRadius={8}
-			stroke={color ?? {r: 0, g: 0, b: 0, a: 0.08}}
-			strokeWidth={color ? 4 : 1}
+			strokeAlign="outside"
+			stroke={color() ?? {r: 0, g: 0, b: 0, a: 0.08}}
+			strokeWidth={color() ? 4 : 1}
 			effect={{
 				type: 'drop-shadow',
 				color: {r: 0, g: 0, b: 0, a: 0.06},
@@ -468,7 +474,7 @@ function FigChat() {
 						placeholder="Chat"
 						horizontalAlignText="center"
 						fontSize={20}
-						fill={color ?? '#000000'}
+						fill={color() ?? '#000000'}
 					/>
 					<Line
 						stroke="#000000"
