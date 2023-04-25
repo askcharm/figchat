@@ -51,7 +51,7 @@ function FigChat() {
 		'keyVisible',
 		false
 	)
-	const [keyMessage, setKeyMessage] = useSyncedState<
+	const [openAIKeyMessage, setOpenAIKeyMessage] = useSyncedState<
 		ChatMessage & {
 			role: 'OpenAI Key'
 		}
@@ -382,6 +382,41 @@ function FigChat() {
 	}
 
 	const submit = async () => {
+		// Detect OpenAI Key
+		let key = openAIKeyMessage.content
+		if (!key) {
+			// Grab a key from another FigChat node
+			let existingKey: string | undefined = undefined
+			figma.currentPage.children.forEach((node) => {
+				if (
+					node.type === 'WIDGET' &&
+					node.widgetId === figma.widgetId
+				) {
+					const nodeKey = node.widgetSyncedState.key.content
+					if (nodeKey) existingKey = nodeKey
+				}
+			})
+
+			if (existingKey) {
+				// Existing key found
+				setOpenAIKeyMessage({
+					role: 'OpenAI Key',
+					content: existingKey,
+					collapsed: false
+				})
+				key = existingKey
+			} else {
+				// No key found
+				setLoadState('error')
+				setError({
+					message:
+						'No OpenAI API key set.\nClick the key icon in the FigChat toolbar to set one.'
+				})
+				return
+			}
+		}
+
+		// Submit
 		const stream = true
 		setLoadState('loading')
 		waitForTask(
@@ -392,7 +427,7 @@ function FigChat() {
 					messages: systemMessage.content
 						? [systemMessage, ...messages]
 						: messages,
-					key: keyMessage.content,
+					key,
 					temp: +temp,
 					topP: +topP,
 					model
@@ -496,7 +531,7 @@ function FigChat() {
 			)}
 			{keyVisible && (
 				<MessageRow
-					message={keyMessage}
+					message={openAIKeyMessage}
 					expandable={false}
 					deleteable={false}
 					placeholder={isGPT() ? 'OpenAI Key' : 'API Key'}
@@ -505,10 +540,10 @@ function FigChat() {
 					roleColor="#A953FE"
 					monospace={true}
 					onUpdateContent={(content: string) => {
-						setKeyMessage({...keyMessage, content})
+						setOpenAIKeyMessage({...openAIKeyMessage, content})
 					}}
 					onExpandCollapse={(collapsed: boolean) => {
-						setKeyMessage({...keyMessage, collapsed})
+						setOpenAIKeyMessage({...openAIKeyMessage, collapsed})
 					}}
 				/>
 			)}
@@ -593,26 +628,14 @@ function FigChat() {
 				</AutoLayout>
 				<AutoLayout
 					cornerRadius={4}
-					fill={
-						loadState === 'loading'
-							? '#CB0909'
-							: keyMessage.content
-							? '#A953FE'
-							: {r: 0, g: 0, b: 0, a: 0.2}
-					}
-					onClick={
-						keyMessage.content
-							? loadState !== 'loading'
-								? submit
-								: cancel
-							: undefined
-					}
+					fill={loadState === 'loading' ? '#CB0909' : '#A953FE'}
+					onClick={loadState !== 'loading' ? submit : cancel}
 					verticalAlignItems="center"
 					horizontalAlignItems="center"
 					padding={{vertical: 6, horizontal: 8}}
 					spacing={6}
 					hoverStyle={
-						keyMessage.content
+						openAIKeyMessage.content
 							? {
 									fill:
 										loadState === 'loading'
@@ -620,9 +643,6 @@ function FigChat() {
 											: '#832DDA'
 							  }
 							: {}
-					}
-					tooltip={
-						keyMessage.content ? '' : 'Enter your OpenAI Key first'
 					}
 				>
 					{loadState !== 'loading' && (
