@@ -479,29 +479,6 @@ function FigChat() {
 		// Submit
 		const stream = true
 		setLoadState('loading')
-
-		console.log('testing')
-		let turns = 0
-		const interval = setInterval(() => {
-			console.log('test turn ' + turns)
-			// add a message that says "ping"
-			setMessages((messages) => [
-				...messages,
-				{
-					role: 'user',
-					content: 'ping',
-					collapsed: false
-				}
-			])
-
-			// stop after 30 turns
-			turns++
-			if (turns >= 30) {
-				clearInterval(interval)
-			}
-		}, 1000)
-		return
-
 		waitForTask(
 			new Promise((resolve) => {
 				figma.showUI(__html__, {visible: false})

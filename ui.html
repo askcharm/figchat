@@ -5,7 +5,6 @@
 		}
 
 		if (event.data.pluginMessage.type === 'submit-stream') {
-			console.log('EXISTS RUNNING REQUEST', !!window.activeRequest)
 			const {messages, key, model, temp, topP} = event.data.pluginMessage
 			const xhr = new XMLHttpRequest()
 			xhr.open('POST', 'https://api.openai.com/v1/chat/completions', true)
@@ -14,6 +13,7 @@
 			xhr.onload = () => {
 				try {
 					// try to parse the response
+					// (if we can parse it, it is an error)
 					const response = JSON.parse(xhr.response)
 					if (response.error) {
 						// ERROR
@@ -27,6 +27,7 @@
 				} catch (e) {
 					// Unparseable response
 					// It is likely a stream response
+					// (this is a good thing, it means its not an error)
 				}
 			}
 			xhr.onreadystatechange = function () {
@@ -76,7 +77,11 @@
 			xhr.send(
 				JSON.stringify({
 					model,
-					messages,
+					messages: messages.map((msg) => {
+						// Remove the "collapsed" property before sending to OpenAI
+						const {collapsed, ...rest} = msg
+						return rest
+					}),
 					temperature: temp,
 					top_p: topP,
 					stream: true
