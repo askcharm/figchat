@@ -58,9 +58,9 @@ function FigChat() {
 	>('key', {role: 'OpenAI Key', content: '', collapsed: false})
 	const [anthropicKeyMessage, setAnthropicKeyMessage] = useSyncedState<
 		ChatMessage & {
-			role: 'Claude Key'
+			role: 'API Key'
 		}
-	>('anthropicKey', {role: 'Claude Key', content: '', collapsed: false})
+	>('anthropicKey', {role: 'API Key', content: '', collapsed: false})
 
 	const [loadState, setLoadState] = useSyncedState<
 		'ready' | 'loading' | 'error'
@@ -68,6 +68,14 @@ function FigChat() {
 	const [error, setError] = useSyncedState<Record<string, string>>(
 		'error',
 		{}
+	)
+	const widgetId = figma.widget.useWidgetId()
+
+	// This is used to detect if this widget node is new or not
+	// If the node ID does not match the one in the synced state, then this is a new node, and we should fetch keys
+	const [storedWidgetId, setStoredWidgetId] = useSyncedState<string>(
+		'storedWidgetId',
+		''
 	)
 
 	const [model, setModel] = useSyncedState('model', 'gpt-4')
@@ -81,6 +89,70 @@ function FigChat() {
 
 	const isGPT = () => model.startsWith('gpt')
 	const color = () => (colorState === '#ffffff' ? undefined : colorState)
+
+	// Key Fetch
+	// Fetch OpenAI & Anthropic keys from existing widgets on widget mount
+	const keyFetch = () => {
+		// Detect OpenAI Key
+		let openAIKey = openAIKeyMessage.content
+		let anthropicKey = anthropicKeyMessage.content
+
+		// Fetch keys if needed
+		if (!openAIKey || !anthropicKey) {
+			let existingOpenAIKey: string | undefined = undefined
+			let existingAnthropicKey: string | undefined = undefined
+			figma.currentPage.children.forEach((node) => {
+				if (
+					node.type === 'WIDGET' &&
+					node.widgetId === figma.widgetId
+				) {
+					console.log(node.widgetSyncedState)
+					const nodeOpenAIKey = node.widgetSyncedState.key?.content
+					if (nodeOpenAIKey) existingOpenAIKey = nodeOpenAIKey
+					const nodeAnthropicKey =
+						node.widgetSyncedState.anrhropicKey?.content
+					if (nodeAnthropicKey)
+						existingAnthropicKey = nodeAnthropicKey
+				}
+			})
+
+			// Set OpenAI key if found
+			if (!openAIKey && existingOpenAIKey) {
+				setOpenAIKeyMessage({
+					role: 'OpenAI Key',
+					content: existingOpenAIKey,
+					collapsed: false
+				})
+				openAIKey = existingOpenAIKey
+			}
+
+			// Set Anthropic key if found
+			if (!anthropicKey && existingAnthropicKey) {
+				setAnthropicKeyMessage({
+					role: 'API Key',
+					content: existingAnthropicKey,
+					collapsed: false
+				})
+				anthropicKey = existingAnthropicKey
+			}
+		}
+
+		// Return keys
+		return {
+			openAIKey,
+			anthropicKey
+		}
+	}
+
+	// Key Fetch on Mount Effect
+	// Run Key Fetch on widget mount
+	useEffect(() => {
+		if (widgetId !== storedWidgetId) {
+			// New widget node, fetch keys
+			setStoredWidgetId(widgetId)
+			keyFetch()
+		}
+	})
 
 	usePropertyMenu(
 		[
@@ -382,35 +454,23 @@ function FigChat() {
 	}
 
 	const submit = async () => {
-		// Detect OpenAI Key
-		let key = openAIKeyMessage.content
-		if (!key) {
-			// Grab a key from another FigChat node
-			let existingKey: string | undefined = undefined
-			figma.currentPage.children.forEach((node) => {
-				if (
-					node.type === 'WIDGET' &&
-					node.widgetId === figma.widgetId
-				) {
-					const nodeKey = node.widgetSyncedState.key.content
-					if (nodeKey) existingKey = nodeKey
-				}
-			})
+		let openAIKey = openAIKeyMessage.content
+		let anthropicKey = anthropicKeyMessage.content
 
-			if (existingKey) {
-				// Existing key found
-				setOpenAIKeyMessage({
-					role: 'OpenAI Key',
-					content: existingKey,
-					collapsed: false
-				})
-				key = existingKey
-			} else {
-				// No key found
+		// Run Key Fetch if model key not set
+		if ((isGPT() && !openAIKey) || (!isGPT() && !anthropicKey)) {
+			// Model key not set, run key fetch
+			const fetchedKeys = keyFetch()
+			openAIKey = fetchedKeys.openAIKey
+			anthropicKey = fetchedKeys.anthropicKey
+
+			// If still no keys, return
+			if ((isGPT() && !openAIKey) || (!isGPT() && !anthropicKey)) {
 				setLoadState('error')
 				setError({
-					message:
-						'No OpenAI API key set.\nClick the key icon in the FigChat toolbar to set one.'
+					message: `No ${
+						isGPT() ? 'OpenAI' : 'Anthropic'
+					} API key set.\nClick the key icon in the FigChat toolbar to set one.`
 				})
 				return
 			}
@@ -419,6 +479,29 @@ function FigChat() {
 		// Submit
 		const stream = true
 		setLoadState('loading')
+
+		console.log('testing')
+		let turns = 0
+		const interval = setInterval(() => {
+			console.log('test turn ' + turns)
+			// add a message that says "ping"
+			setMessages((messages) => [
+				...messages,
+				{
+					role: 'user',
+					content: 'ping',
+					collapsed: false
+				}
+			])
+
+			// stop after 30 turns
+			turns++
+			if (turns >= 30) {
+				clearInterval(interval)
+			}
+		}, 1000)
+		return
+
 		waitForTask(
 			new Promise((resolve) => {
 				figma.showUI(__html__, {visible: false})
@@ -427,7 +510,7 @@ function FigChat() {
 					messages: systemMessage.content
 						? [systemMessage, ...messages]
 						: messages,
-					key,
+					key: isGPT() ? openAIKey : anthropicKey,
 					temp: +temp,
 					topP: +topP,
 					model
