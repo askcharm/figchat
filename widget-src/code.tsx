@@ -58,9 +58,9 @@ function FigChat() {
 	>('key', {role: 'OpenAI Key', content: '', collapsed: false})
 	const [anthropicKeyMessage, setAnthropicKeyMessage] = useSyncedState<
 		ChatMessage & {
-			role: 'API Key'
+			role: 'Anthropic Key'
 		}
-	>('anthropicKey', {role: 'API Key', content: '', collapsed: false})
+	>('anthropicKey', {role: 'Anthropic Key', content: '', collapsed: false})
 
 	const [loadState, setLoadState] = useSyncedState<
 		'ready' | 'loading' | 'error'
@@ -129,7 +129,7 @@ function FigChat() {
 			// Set Anthropic key if found
 			if (!anthropicKey && existingAnthropicKey) {
 				setAnthropicKeyMessage({
-					role: 'API Key',
+					role: 'Anthropic Key',
 					content: existingAnthropicKey,
 					collapsed: false
 				})
@@ -470,7 +470,7 @@ function FigChat() {
 				setError({
 					message: `No ${
 						isGPT() ? 'OpenAI' : 'Anthropic'
-					} API key set.\nClick the key icon in the FigChat toolbar to set one.`
+					} key set.\nClick the key icon in the FigChat toolbar to set one.`
 				})
 				return
 			}
@@ -591,19 +591,35 @@ function FigChat() {
 			)}
 			{keyVisible && (
 				<MessageRow
-					message={openAIKeyMessage}
+					message={isGPT() ? openAIKeyMessage : anthropicKeyMessage}
 					expandable={false}
 					deleteable={false}
-					placeholder={isGPT() ? 'OpenAI Key' : 'API Key'}
+					placeholder={isGPT() ? 'OpenAI Key' : 'Anthropic Key'}
 					widened={widened}
-					roleWidth={isGPT() ? 83 : 70}
+					roleWidth={isGPT() ? 83 : 120}
 					roleColor="#A953FE"
 					monospace={true}
 					onUpdateContent={(content: string) => {
-						setOpenAIKeyMessage({...openAIKeyMessage, content})
+						isGPT()
+							? setOpenAIKeyMessage({
+									...openAIKeyMessage,
+									content
+							  })
+							: setAnthropicKeyMessage({
+									...anthropicKeyMessage,
+									content
+							  })
 					}}
 					onExpandCollapse={(collapsed: boolean) => {
-						setOpenAIKeyMessage({...openAIKeyMessage, collapsed})
+						isGPT()
+							? setOpenAIKeyMessage({
+									...openAIKeyMessage,
+									collapsed
+							  })
+							: setAnthropicKeyMessage({
+									...anthropicKeyMessage,
+									collapsed
+							  })
 					}}
 				/>
 			)}

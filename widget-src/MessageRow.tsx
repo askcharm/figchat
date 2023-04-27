@@ -152,7 +152,7 @@ export const MessageRow = ({
 						/>
 					)}
 				</AutoLayout>
-				{message.role !== 'system' && message.role !== 'OpenAI Key' && (
+				{['user', 'assistant'].includes(message.role) && (
 					<AutoLayout
 						direction="horizontal"
 						spacing={8}

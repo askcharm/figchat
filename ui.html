@@ -6,10 +6,23 @@
 
 		if (event.data.pluginMessage.type === 'submit-stream') {
 			const {messages, key, model, temp, topP} = event.data.pluginMessage
+			const isGPT = () => model.startsWith('gpt')
 			const xhr = new XMLHttpRequest()
-			xhr.open('POST', 'https://api.openai.com/v1/chat/completions', true)
+
+			// Set up the request
+			xhr.open(
+				'POST',
+				isGPT()
+					? 'https://api.openai.com/v1/chat/completions'
+					: 'https://api.anthropic.com/v1/complete',
+				true
+			)
 			xhr.setRequestHeader('Content-Type', 'application/json')
-			xhr.setRequestHeader('Authorization', `Bearer ${key}`)
+			isGPT()
+				? xhr.setRequestHeader('Authorization', `Bearer ${key}`)
+				: xhr.setRequestHeader('x-API-Key', key)
+
+			// Handle errors
 			xhr.onload = () => {
 				try {
 					// try to parse the response
@@ -30,11 +43,33 @@
 					// (this is a good thing, it means its not an error)
 				}
 			}
+
+			// Handle streaming
 			xhr.onreadystatechange = function () {
-				console.log('READY STATE CHANGE', xhr.responseText)
+				const {responseText, readyState, status} = xhr
+				console.log('READY STATE CHANGE', {
+					responseText,
+					readyState,
+					status
+				})
 				const messagesWithoutSystem = messages.filter(
 					(msg) => msg.role !== 'system'
 				)
+				if (xhr.readyState === 4 && xhr.status === 0) {
+					// CORS error
+					window.parent.postMessage(
+						{
+							pluginMessage: {
+								error: {
+									message:
+										'CORS error.\nSet a proxy URL and try again.'
+								}
+							}
+						},
+						'*'
+					)
+					return
+				}
 				if (xhr.readyState === 3 && xhr.status === 200) {
 					console.log('STREAMING')
 					// STREAMING
