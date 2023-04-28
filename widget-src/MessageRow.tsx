@@ -24,6 +24,7 @@ export const MessageRow = ({
 	message,
 	index,
 	expandable,
+	deleteable,
 	placeholder,
 	widened,
 	roleWidth,
@@ -113,7 +114,7 @@ export const MessageRow = ({
 				</AutoLayout>
 				<AutoLayout
 					width={
-						message.role === 'assistant' || message.role === 'user'
+						deleteable
 							? 300 + (widened ? 320 : 0)
 							: 334 + (widened ? 320 : 0)
 					}
@@ -152,7 +153,7 @@ export const MessageRow = ({
 						/>
 					)}
 				</AutoLayout>
-				{['user', 'assistant'].includes(message.role) && (
+				{deleteable && (
 					<AutoLayout
 						direction="horizontal"
 						spacing={8}

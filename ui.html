@@ -5,7 +5,8 @@
 		}
 
 		if (event.data.pluginMessage.type === 'submit-stream') {
-			const {messages, key, model, temp, topP} = event.data.pluginMessage
+			const {messages, key, model, temp, topP, anthropicProxyURL} =
+				event.data.pluginMessage
 			const isGPT = () => model.startsWith('gpt')
 			const xhr = new XMLHttpRequest()
 
@@ -14,13 +15,13 @@
 				'POST',
 				isGPT()
 					? 'https://api.openai.com/v1/chat/completions'
-					: 'https://api.anthropic.com/v1/complete',
+					: `${anthropicProxyURL}/v1/complete`,
 				true
 			)
 			xhr.setRequestHeader('Content-Type', 'application/json')
 			isGPT()
 				? xhr.setRequestHeader('Authorization', `Bearer ${key}`)
-				: xhr.setRequestHeader('x-API-Key', key)
+				: xhr.setRequestHeader('X-API-Key', key)
 
 			// Handle errors
 			xhr.onload = () => {
@@ -47,34 +48,15 @@
 			// Handle streaming
 			xhr.onreadystatechange = function () {
 				const {responseText, readyState, status} = xhr
-				console.log('READY STATE CHANGE', {
-					responseText,
-					readyState,
-					status
-				})
 				const messagesWithoutSystem = messages.filter(
 					(msg) => msg.role !== 'system'
 				)
-				if (xhr.readyState === 4 && xhr.status === 0) {
-					// CORS error
-					window.parent.postMessage(
-						{
-							pluginMessage: {
-								error: {
-									message:
-										'No Proxy URL set.\nFigChat cannot call Claude directly due to CORS.\nSet a Proxy URL and try again.'
-								}
-							}
-						},
-						'*'
-					)
-					return
-				}
 				if (xhr.readyState === 3 && xhr.status === 200) {
-					console.log('STREAMING')
-					// STREAMING
-					const completion = extractAndCombineData(xhr.responseText)
-					console.log(completion)
+					const completion = extractAndCombineData(
+						xhr.responseText,
+						model,
+						messages
+					)
 					window.parent.postMessage(
 						{
 							pluginMessage: {
@@ -91,15 +73,16 @@
 				if (xhr.readyState === 4 && xhr.status === 200) {
 					// COMPLETE
 					window.activeRequest = undefined
-					const completion = extractAndCombineData(xhr.responseText)
-					console.log(completion)
+					const completion = extractAndCombineData(
+						xhr.responseText,
+						model,
+						messages
+					)
 					window.parent.postMessage(
 						{
 							pluginMessage: {
 								messages: [
-									...messagesWithoutSystem.filter(
-										(msg) => msg.role !== 'system'
-									),
+									...messagesWithoutSystem,
 									completion
 								],
 								state: 'complete'
@@ -110,22 +93,33 @@
 				}
 			}
 			xhr.send(
-				JSON.stringify({
-					model,
-					messages: messages.map((msg) => {
-						// Remove the "collapsed" property before sending to OpenAI
-						const {collapsed, ...rest} = msg
-						return rest
-					}),
-					temperature: temp,
-					top_p: topP,
-					stream: true
-				})
+				JSON.stringify(
+					isGPT()
+						? {
+								model,
+								messages: messages.map((msg) => {
+									// Remove the "collapsed" property before sending to OpenAI
+									const {collapsed, ...rest} = msg
+									return rest
+								}),
+								temperature: temp,
+								top_p: topP,
+								stream: true
+						  }
+						: {
+								model,
+								prompt: `${claudify(messages)}\n\nAssistant:`,
+								temperature: temp,
+								top_p: topP,
+								stream: true
+						  }
+				)
 			)
 		}
 	}
 
-	function extractAndCombineData(responseText) {
+	function extractAndCombineData(responseText, model, messages) {
+		const isGPT = () => model.startsWith('gpt')
 		const lines = responseText.split('\n')
 		let combinedDelta = {role: '', content: ''}
 
@@ -136,19 +130,28 @@
 				try {
 					const jsonObj = JSON.parse(jsonString)
 
-					if (
-						jsonObj.choices &&
-						jsonObj.choices[0] &&
-						jsonObj.choices[0].delta
-					) {
-						const delta = jsonObj.choices[0].delta
+					if (isGPT()) {
+						// OpenAI
+						if (
+							jsonObj.choices &&
+							jsonObj.choices[0] &&
+							jsonObj.choices[0].delta
+						) {
+							const delta = jsonObj.choices[0].delta
 
-						if (delta.role) {
-							combinedDelta.role = delta.role
+							if (delta.role) {
+								combinedDelta.role = delta.role
+							}
+
+							if (delta.content) {
+								combinedDelta.content += delta.content
+							}
 						}
-
-						if (delta.content) {
-							combinedDelta.content += delta.content
+					} else {
+						// Anthropic
+						if (jsonObj.completion) {
+							combinedDelta.role = 'assistant'
+							combinedDelta.content = jsonObj.completion.trim()
 						}
 					}
 				} catch (error) {
@@ -158,5 +161,54 @@
 		}
 
 		return combinedDelta
+	}
+
+	/* -- Claudify -- */
+
+	// Converts a ChatGPT-style chat into a string that Claude can understand
+	const claudify = (chat) => {
+		let claudeString = ''
+
+		chat.forEach((message) => {
+			if (message.role === 'user' || message.role === 'system') {
+				claudeString += `\n\nHuman: ${message.content}`
+			} else if (message.role === 'assistant') {
+				claudeString += `\n\nAssistant: ${message.content}`
+			}
+		})
+
+		return claudeString
+	}
+
+	/* -- GPTify -- */
+
+	// Converts a Claude-style chat into a string that GPT-4 can understand
+	const gptify = (claudeText, model) => {
+		const lines = claudeText.trim().split('\n\n')
+		const gptFormat = []
+
+		for (let i = 0; i < lines.length; i++) {
+			const line = lines[i].trim()
+			if (line.length === 0) {
+				continue
+			}
+			const separatorIndex = line.indexOf(':')
+			const role = line.slice(0, separatorIndex).trim()
+			const content = line.slice(separatorIndex + 1).trim()
+
+			if (role === 'Human') {
+				gptFormat.push({
+					role: 'user',
+					content: content
+				})
+			} else if (role === 'Assistant') {
+				gptFormat.push({
+					role: 'assistant',
+					content: content
+				})
+			}
+		}
+
+		return gptFormat
 	}
 </script>

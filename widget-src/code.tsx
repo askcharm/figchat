@@ -99,11 +99,14 @@ function FigChat() {
 		// Detect OpenAI Key
 		let openAIKey = openAIKeyMessage.content
 		let anthropicKey = anthropicKeyMessage.content
+		let anthropicProxyURL = anthropicProxyURLMessage.content
 
 		// Fetch keys if needed
-		if (!openAIKey || !anthropicKey) {
+		if (!openAIKey || !anthropicKey || !anthropicProxyURL) {
 			let existingOpenAIKey: string | undefined = undefined
 			let existingAnthropicKey: string | undefined = undefined
+			let existingAnthropicProxyURL: string | undefined = undefined
+
 			figma.currentPage.children.forEach((node) => {
 				if (
 					node.type === 'WIDGET' &&
@@ -111,10 +114,16 @@ function FigChat() {
 				) {
 					const nodeOpenAIKey = node.widgetSyncedState.key?.content
 					if (nodeOpenAIKey) existingOpenAIKey = nodeOpenAIKey
+
 					const nodeAnthropicKey =
 						node.widgetSyncedState.anthropicKey?.content
 					if (nodeAnthropicKey)
 						existingAnthropicKey = nodeAnthropicKey
+
+					const nodeAnthropicProxyURL =
+						node.widgetSyncedState.anthropicProxyURL?.content
+					if (nodeAnthropicProxyURL)
+						existingAnthropicProxyURL = nodeAnthropicProxyURL
 				}
 			})
 
@@ -137,12 +146,25 @@ function FigChat() {
 				})
 				anthropicKey = existingAnthropicKey
 			}
+
+			// Set Anthropic proxy URL if found
+			if (!anthropicProxyURL && existingAnthropicProxyURL) {
+				console.log('setting proxy url')
+				debugger
+				setAnthropicProxyURLMessage({
+					role: 'Proxy URL',
+					content: existingAnthropicProxyURL,
+					collapsed: false
+				})
+				anthropicProxyURL = existingAnthropicProxyURL
+			}
 		}
 
 		// Return keys
 		return {
 			openAIKey,
-			anthropicKey
+			anthropicKey,
+			anthropicProxyURL
 		}
 	}
 
@@ -152,7 +174,7 @@ function FigChat() {
 		if (widgetId !== storedWidgetId) {
 			// New widget node, fetch keys
 			setStoredWidgetId(widgetId)
-			const newKeys = keyFetch()
+			keyFetch()
 		}
 	})
 
@@ -309,7 +331,9 @@ function FigChat() {
 			{
 				propertyName: 'toggleKey',
 				itemType: 'toggle',
-				tooltip: `Toggle ${isGPT() ? 'OpenAI' : 'Anthropic'} Key`,
+				tooltip: `Toggle ${
+					isGPT() ? 'OpenAI Key' : 'Anthropic Key & Proxy'
+				}`,
 				isToggled: keyVisible,
 				icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>`
 			},
@@ -458,13 +482,19 @@ function FigChat() {
 	const submit = async () => {
 		let openAIKey = openAIKeyMessage.content
 		let anthropicKey = anthropicKeyMessage.content
+		let anthropicProxyURL = anthropicProxyURLMessage.content
 
 		// Run Key Fetch if model key not set
-		if ((isGPT() && !openAIKey) || (!isGPT() && !anthropicKey)) {
+		if (
+			(isGPT() && !openAIKey) ||
+			(!isGPT() && (!anthropicKey || !anthropicProxyURL))
+		) {
+			console.log('running key fetch')
 			// Model key not set, run key fetch
 			const fetchedKeys = keyFetch()
 			openAIKey = fetchedKeys.openAIKey
 			anthropicKey = fetchedKeys.anthropicKey
+			anthropicProxyURL = fetchedKeys.anthropicProxyURL
 
 			// If still no keys, return
 			if ((isGPT() && !openAIKey) || (!isGPT() && !anthropicKey)) {
@@ -473,6 +503,12 @@ function FigChat() {
 					message: `No ${
 						isGPT() ? 'OpenAI' : 'Anthropic'
 					} key set.\nClick the key icon in the FigChat toolbar to set one.`
+				})
+				return
+			} else if (!isGPT() && !anthropicProxyURL) {
+				setLoadState('error')
+				setError({
+					message: `No Proxy URL set.\nFigChat requires a proxy to call Anthropic Claude.\nClick the key icon in the FigChat toolbar to set one.`
 				})
 				return
 			}
@@ -492,7 +528,10 @@ function FigChat() {
 					key: isGPT() ? openAIKey : anthropicKey,
 					temp: +temp,
 					topP: +topP,
-					model
+					model,
+					anthropicProxyURL: isGPT()
+						? undefined
+						: anthropicProxyURLMessage.content
 				})
 
 				if (stream) {
