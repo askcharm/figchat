@@ -31,7 +31,6 @@
 					const response = JSON.parse(xhr.response)
 					if (response.error) {
 						// ERROR
-						debugger
 						window.parent.postMessage(
 							{pluginMessage: {error: response.error}},
 							'*'
@@ -51,6 +50,22 @@
 				const messagesWithoutSystem = messages.filter(
 					(msg) => msg.role !== 'system'
 				)
+				if (xhr.readyState === 4 && !xhr.status) {
+					// Connection Failed
+					window.parent.postMessage(
+						{
+							pluginMessage: {
+								error: {
+									message: isGPT()
+										? 'Connection Error.\n\nOpenAI may be experiencing issues, or the Internet may be unavailable.'
+										: 'Connection Error.\n\nYour Anthropic Proxy may not be running,\nAnthropic itself may be experiencing issues,\nor the Internet may be unavailable.'
+								}
+							}
+						},
+						'*'
+					)
+					return
+				}
 				if (xhr.readyState === 3 && xhr.status === 200) {
 					const completion = extractAndCombineData(
 						xhr.responseText,

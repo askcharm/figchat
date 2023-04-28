@@ -743,29 +743,60 @@ function FigChat() {
 			>
 				<AutoLayout
 					direction="horizontal"
-					spacing={8}
-					padding={{vertical: 6, horizontal: 8}}
-					cornerRadius={4}
-					hoverStyle={{
-						fill: '#F5ECFF'
-					}}
-					onClick={addMessage}
+					width="fill-parent"
+					spacing="auto"
+					verticalAlignItems="center"
 				>
-					<SVG
-						src={`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A953FE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>`}
-					/>
-					<Text
-						fontFamily="Inter"
-						fontSize={13}
-						letterSpacing={0.1}
-						horizontalAlignText="left"
-						verticalAlignText="center"
-						fill="#A953FE"
-						height={20}
-						fontWeight={600}
+					<AutoLayout
+						direction="horizontal"
+						spacing={8}
+						padding={{vertical: 6, horizontal: 8}}
+						cornerRadius={4}
+						hoverStyle={{
+							fill: '#F5ECFF'
+						}}
+						onClick={addMessage}
 					>
-						Add message
-					</Text>
+						<SVG
+							src={`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A953FE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>`}
+						/>
+						<Text
+							fontFamily="Inter"
+							fontSize={13}
+							letterSpacing={0.1}
+							horizontalAlignText="left"
+							verticalAlignText="center"
+							fill="#A953FE"
+							height={20}
+							fontWeight={600}
+						>
+							Add message
+						</Text>
+					</AutoLayout>
+					<AutoLayout
+						cornerRadius={4}
+						fill={{r: 0, g: 0, b: 0, a: 0.0}}
+						verticalAlignItems="center"
+						horizontalAlignItems="center"
+						padding={{vertical: 6, horizontal: 8, right: 20}}
+						spacing={6}
+					>
+						<Text
+							fontFamily="Inter"
+							fontSize={12}
+							horizontalAlignText="center"
+							verticalAlignText="center"
+							fill={{r: 0, g: 0, b: 0, a: 0.25}}
+							fontWeight={500}
+						>
+							{{
+								'gpt-3.5-turbo': 'GPT-3.5-Turbo',
+								'gpt-4': 'GPT-4',
+								'claude-v1': 'Claude v1',
+								'claude-instant-v1': 'Claude Instant v1'
+							}[model] ?? 'Unknown'}
+						</Text>
+					</AutoLayout>
 				</AutoLayout>
 				<AutoLayout
 					cornerRadius={4}
