@@ -148,6 +148,7 @@ export const MessageRow = ({
 							}}
 							placeholder={placeholder}
 							height={!message.collapsed ? 'hug-contents' : 23}
+							inputBehavior="multiline"
 							paragraphSpacing={8}
 							fontFamily={monospace ? 'Roboto Mono' : 'Inter'}
 						/>
