@@ -3,13 +3,10 @@ import {MessageRow} from './MessageRow'
 const {widget} = figma
 const {
 	AutoLayout,
-	Frame,
 	Text,
 	Input,
 	Line,
-	Rectangle,
 	SVG,
-	useSyncedMap,
 	usePropertyMenu,
 	useEffect,
 	waitForTask,
@@ -61,6 +58,12 @@ function FigChat() {
 			role: 'Anthropic Key'
 		}
 	>('anthropicKey', {role: 'Anthropic Key', content: '', collapsed: false})
+	const [anthropicProxyURLMessage, setAnthropicProxyURLMessage] =
+		useSyncedState<ChatMessage & {role: 'Proxy URL'}>('anthropicProxyURL', {
+			role: 'Proxy URL',
+			content: '',
+			collapsed: false
+		})
 
 	const [loadState, setLoadState] = useSyncedState<
 		'ready' | 'loading' | 'error'
@@ -110,7 +113,7 @@ function FigChat() {
 					const nodeOpenAIKey = node.widgetSyncedState.key?.content
 					if (nodeOpenAIKey) existingOpenAIKey = nodeOpenAIKey
 					const nodeAnthropicKey =
-						node.widgetSyncedState.anrhropicKey?.content
+						node.widgetSyncedState.anthropicKey?.content
 					if (nodeAnthropicKey)
 						existingAnthropicKey = nodeAnthropicKey
 				}
@@ -150,7 +153,8 @@ function FigChat() {
 		if (widgetId !== storedWidgetId) {
 			// New widget node, fetch keys
 			setStoredWidgetId(widgetId)
-			keyFetch()
+			const newKeys = keyFetch()
+			console.log('Key fetch on mount', newKeys)
 		}
 	})
 
@@ -598,7 +602,7 @@ function FigChat() {
 					widened={widened}
 					roleWidth={isGPT() ? 83 : 120}
 					roleColor="#A953FE"
-					monospace={true}
+					monospace
 					onUpdateContent={(content: string) => {
 						isGPT()
 							? setOpenAIKeyMessage({
@@ -623,10 +627,34 @@ function FigChat() {
 					}}
 				/>
 			)}
+			{keyVisible && !isGPT() && (
+				<MessageRow
+					message={anthropicProxyURLMessage}
+					expandable={false}
+					deleteable={false}
+					placeholder="Anthropic Proxy URL"
+					widened={widened}
+					monospace
+					roleWidth={80}
+					roleColor="#A953FE"
+					onUpdateContent={(content: string) => {
+						setAnthropicProxyURLMessage({
+							...anthropicProxyURLMessage,
+							content
+						})
+					}}
+					onExpandCollapse={(collapsed: boolean) => {
+						setAnthropicProxyURLMessage({
+							...anthropicProxyURLMessage,
+							collapsed
+						})
+					}}
+				/>
+			)}
 			{systemMessageVisible && (
 				<MessageRow
 					message={systemMessage}
-					expandable={true}
+					expandable
 					deleteable={false}
 					placeholder="System Message"
 					widened={widened}
@@ -644,8 +672,8 @@ function FigChat() {
 				<MessageRow
 					message={message}
 					index={index}
-					expandable={true}
-					deleteable={true}
+					expandable
+					deleteable
 					placeholder="Message"
 					widened={widened}
 					roleWidth={message.role === 'user' ? 36 : 78}
