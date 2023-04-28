@@ -61,7 +61,7 @@ function FigChat() {
 	const [anthropicProxyURLMessage, setAnthropicProxyURLMessage] =
 		useSyncedState<ChatMessage & {role: 'Proxy URL'}>('anthropicProxyURL', {
 			role: 'Proxy URL',
-			content: '',
+			content: 'http://localhost:5555',
 			collapsed: false
 		})
 
