@@ -109,7 +109,6 @@ function FigChat() {
 					node.type === 'WIDGET' &&
 					node.widgetId === figma.widgetId
 				) {
-					console.log(node.widgetSyncedState)
 					const nodeOpenAIKey = node.widgetSyncedState.key?.content
 					if (nodeOpenAIKey) existingOpenAIKey = nodeOpenAIKey
 					const nodeAnthropicKey =
@@ -154,7 +153,6 @@ function FigChat() {
 			// New widget node, fetch keys
 			setStoredWidgetId(widgetId)
 			const newKeys = keyFetch()
-			console.log('Key fetch on mount', newKeys)
 		}
 	})
 
