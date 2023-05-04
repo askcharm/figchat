@@ -736,11 +736,7 @@ function FigChat() {
 					}}
 				/>
 			))}
-			<AutoLayout
-				direction="horizontal"
-				width="fill-parent"
-				spacing="auto"
-			>
+			<AutoLayout direction="horizontal" width="fill-parent" spacing={10}>
 				<AutoLayout
 					direction="horizontal"
 					width="fill-parent"
@@ -778,8 +774,49 @@ function FigChat() {
 						fill={{r: 0, g: 0, b: 0, a: 0.0}}
 						verticalAlignItems="center"
 						horizontalAlignItems="center"
-						padding={{vertical: 6, horizontal: 8, right: 20}}
+						padding={{vertical: 6, horizontal: 8}}
 						spacing={6}
+						height={32}
+						width="hug-contents"
+						hoverStyle={{
+							fill: {r: 0, g: 0, b: 0, a: 0.07}
+						}}
+						onClick={() => {
+							const oldModel = model
+							let newModel = ''
+
+							// Rotate model
+							switch (model) {
+								case 'gpt-3.5-turbo':
+									newModel = 'gpt-4'
+									break
+								case 'gpt-4':
+									newModel = 'claude-v1'
+									break
+								case 'claude-v1':
+									newModel = 'claude-instant-v1'
+									break
+								case 'claude-instant-v1':
+									newModel = 'gpt-3.5-turbo'
+									break
+							}
+							setModel(newModel)
+
+							// If we're switching between GPT and Claude with default temps set, update the temp
+							if (
+								oldModel.includes('gpt') &&
+								!newModel.includes('gpt')
+							) {
+								// GPT to Claude
+								if (temp === '0.7') setTemp('1')
+							} else if (
+								// Claude to GPT
+								!oldModel.includes('gpt') &&
+								newModel.includes('gpt')
+							) {
+								if (temp === '1') setTemp('0.7')
+							}
+						}}
 					>
 						<Text
 							fontFamily="Inter"
@@ -788,9 +825,12 @@ function FigChat() {
 							verticalAlignText="center"
 							fill={{r: 0, g: 0, b: 0, a: 0.25}}
 							fontWeight={500}
+							hoverStyle={{
+								fill: {r: 0, g: 0, b: 0, a: 0.55}
+							}}
 						>
 							{{
-								'gpt-3.5-turbo': 'GPT-3.5-Turbo',
+								'gpt-3.5-turbo': 'GPT-3.5',
 								'gpt-4': 'GPT-4',
 								'claude-v1': 'Claude v1',
 								'claude-instant-v1': 'Claude Instant v1'
