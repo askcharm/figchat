@@ -625,6 +625,7 @@ function FigChat() {
 							placeholder="Chat"
 							horizontalAlignText="center"
 							fontSize={35}
+							fontWeight={600}
 							lineHeight={46}
 							fill={color() ?? '#000000'}
 						/>
