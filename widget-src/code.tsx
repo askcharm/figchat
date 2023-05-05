@@ -611,17 +611,90 @@ function FigChat() {
 					width="fill-parent"
 					horizontalAlignItems="center"
 					spacing={24}
-					padding={{top: 6}}
 				>
-					<Input
-						width={320}
-						value={title}
-						onTextEditEnd={(e) => setTitle(e.characters)}
-						placeholder="Chat"
-						horizontalAlignText="center"
-						fontSize={20}
-						fill={color() ?? '#000000'}
-					/>
+					<AutoLayout
+						padding={{top: 20}}
+						direction="vertical"
+						spacing={2}
+						horizontalAlignItems="center"
+					>
+						<Input
+							width={!widened ? 320 : 768}
+							value={title}
+							onTextEditEnd={(e) => setTitle(e.characters)}
+							placeholder="Chat"
+							horizontalAlignText="center"
+							fontSize={35}
+							lineHeight={46}
+							fill={color() ?? '#000000'}
+						/>
+						<AutoLayout
+							cornerRadius={4}
+							fill={{r: 0, g: 0, b: 0, a: 0.0}}
+							verticalAlignItems="center"
+							horizontalAlignItems="center"
+							padding={{vertical: 10, horizontal: 20}}
+							spacing={6}
+							width="hug-contents"
+							hoverStyle={{
+								fill: {r: 0, g: 0, b: 0, a: 0.07}
+							}}
+							onClick={() => {
+								const oldModel = model
+								let newModel = ''
+
+								// Rotate model
+								switch (model) {
+									case 'gpt-3.5-turbo':
+										newModel = 'gpt-4'
+										break
+									case 'gpt-4':
+										newModel = 'claude-v1'
+										break
+									case 'claude-v1':
+										newModel = 'claude-instant-v1'
+										break
+									case 'claude-instant-v1':
+										newModel = 'gpt-3.5-turbo'
+										break
+								}
+								setModel(newModel)
+
+								// If we're switching between GPT and Claude with default temps set, update the temp
+								if (
+									oldModel.includes('gpt') &&
+									!newModel.includes('gpt')
+								) {
+									// GPT to Claude
+									if (temp === '0.7') setTemp('1')
+								} else if (
+									// Claude to GPT
+									!oldModel.includes('gpt') &&
+									newModel.includes('gpt')
+								) {
+									if (temp === '1') setTemp('0.7')
+								}
+							}}
+						>
+							<Text
+								fontFamily="Inter"
+								fontSize={29}
+								letterSpacing={1.2}
+								textCase="upper"
+								horizontalAlignText="center"
+								verticalAlignText="center"
+								fontWeight={700}
+								fill={{r: 0, g: 0, b: 0, a: 0.4}}
+							>
+								{{
+									'gpt-3.5-turbo': 'GPT-3.5',
+									'gpt-4': 'GPT-4',
+									'claude-v1': 'Claude v1',
+									'claude-instant-v1': 'Claude Instant v1'
+								}[model] ?? 'Unknown'}
+							</Text>
+						</AutoLayout>
+					</AutoLayout>
 					<Line
 						stroke="#000000"
 						strokeWidth={1}
