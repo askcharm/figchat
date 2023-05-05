@@ -479,7 +479,8 @@ function FigChat() {
 		figma.ui.postMessage({type: 'cancel'})
 	}
 
-	const submit = async () => {
+	const submit = async (messagesOverride?: ChatMessage[]) => {
+		let messagesToSubmit = messagesOverride ?? messages
 		let openAIKey = openAIKeyMessage.content
 		let anthropicKey = anthropicKeyMessage.content
 		let anthropicProxyURL = anthropicProxyURLMessage.content
@@ -523,8 +524,8 @@ function FigChat() {
 				figma.ui.postMessage({
 					type: stream ? 'submit-stream' : 'submit',
 					messages: systemMessage.content
-						? [systemMessage, ...messages]
-						: messages,
+						? [systemMessage, ...messagesToSubmit]
+						: messagesToSubmit,
 					key: isGPT() ? openAIKey : anthropicKey,
 					temp: +temp,
 					topP: +topP,
@@ -568,7 +569,7 @@ function FigChat() {
 							setError(response.error)
 						} else if (response.assistantMessage) {
 							const newMessages = [
-								...messages,
+								...messagesToSubmit,
 								{
 									role: 'assistant',
 									content: response.assistantMessage,
@@ -913,9 +914,48 @@ function FigChat() {
 					</AutoLayout>
 				</AutoLayout>
 				<AutoLayout
+					direction="horizontal"
+					spacing={8}
+					padding={{vertical: 6, horizontal: 8}}
+					cornerRadius={4}
+					fill="#F5ECFF"
+					hoverStyle={{
+						fill: '#E6D1FF'
+					}}
+					onClick={() => {
+						// Cancel if running
+						cancel()
+
+						// Delete last message
+						const newMessages = [...messages]
+						newMessages.pop()
+						setMessages(newMessages)
+
+						// Submit
+						submit(newMessages)
+					}}
+				>
+					<SVG
+						width={20}
+						height={20}
+						src='<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#A953FE" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-cw"><path d="M21 2v6h-6"></path><path d="M21 13a9 9 0 1 1-3-7.7L21 8"></path></svg>'
+					/>
+					<Text
+						fontFamily="Inter"
+						fontSize={14}
+						horizontalAlignText="center"
+						verticalAlignText="center"
+						fill="#A953FE"
+						fontWeight={600}
+						height={20}
+					>
+						Redo
+					</Text>
+				</AutoLayout>
+				<AutoLayout
 					cornerRadius={4}
 					fill={loadState === 'loading' ? '#CB0909' : '#A953FE'}
-					onClick={loadState !== 'loading' ? submit : cancel}
+					onClick={loadState !== 'loading' ? () => submit() : cancel}
 					verticalAlignItems="center"
 					horizontalAlignItems="center"
 					padding={{vertical: 6, horizontal: 8}}
