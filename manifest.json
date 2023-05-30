@@ -5,7 +5,7 @@
 	"main": "dist/code.js",
 	"capabilities": [],
 	"enableProposedApi": false,
-	"editorType": ["figjam"],
+	"editorType": ["figjam", "figma"],
 	"containsWidget": true,
 	"widgetApi": "1.0.0",
 	"ui": "ui.html"

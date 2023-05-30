@@ -194,11 +194,11 @@ function FigChat() {
 						label: 'GPT-3.5'
 					},
 					{
-						option: 'claude-v1',
+						option: 'claude-v1-100k',
 						label: 'Claude v1'
 					},
 					{
-						option: 'claude-instant-v1',
+						option: 'claude-instant-v1-100k',
 						label: 'Claude Instant v1'
 					}
 				],
@@ -651,12 +651,12 @@ function FigChat() {
 										newModel = 'gpt-4'
 										break
 									case 'gpt-4':
-										newModel = 'claude-v1'
+										newModel = 'claude-v1-100k'
 										break
-									case 'claude-v1':
-										newModel = 'claude-instant-v1'
+									case 'claude-v1-100k':
+										newModel = 'claude-instant-v1-100k'
 										break
-									case 'claude-instant-v1':
+									case 'claude-instant-v1-100k':
 										newModel = 'gpt-3.5-turbo'
 										break
 								}
@@ -691,8 +691,9 @@ function FigChat() {
 								{{
 									'gpt-3.5-turbo': 'GPT-3.5',
 									'gpt-4': 'GPT-4',
-									'claude-v1': 'Claude v1',
-									'claude-instant-v1': 'Claude Instant v1'
+									'claude-v1-100k': 'Claude v1',
+									'claude-instant-v1-100k':
+										'Claude Instant v1'
 								}[model] ?? 'Unknown'}
 							</Text>
 						</AutoLayout>
@@ -866,12 +867,12 @@ function FigChat() {
 									newModel = 'gpt-4'
 									break
 								case 'gpt-4':
-									newModel = 'claude-v1'
+									newModel = 'claude-v1-100k'
 									break
-								case 'claude-v1':
-									newModel = 'claude-instant-v1'
+								case 'claude-v1-100k':
+									newModel = 'claude-instant-v1-100k'
 									break
-								case 'claude-instant-v1':
+								case 'claude-instant-v1-100k':
 									newModel = 'gpt-3.5-turbo'
 									break
 							}
@@ -907,8 +908,8 @@ function FigChat() {
 							{{
 								'gpt-3.5-turbo': 'GPT-3.5',
 								'gpt-4': 'GPT-4',
-								'claude-v1': 'Claude v1',
-								'claude-instant-v1': 'Claude Instant v1'
+								'claude-v1-100k': 'Claude v1',
+								'claude-instant-v1-100k': 'Claude Instant v1'
 							}[model] ?? 'Unknown'}
 						</Text>
 					</AutoLayout>
