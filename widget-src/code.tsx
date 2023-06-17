@@ -190,7 +190,7 @@ function FigChat() {
 						label: 'GPT-4'
 					},
 					{
-						option: 'gpt-3.5-turbo',
+						option: 'gpt-3.5-turbo-16k',
 						label: 'GPT-3.5'
 					},
 					{
@@ -647,7 +647,7 @@ function FigChat() {
 
 								// Rotate model
 								switch (model) {
-									case 'gpt-3.5-turbo':
+									case 'gpt-3.5-turbo-16k':
 										newModel = 'gpt-4'
 										break
 									case 'gpt-4':
@@ -657,7 +657,7 @@ function FigChat() {
 										newModel = 'claude-instant-v1-100k'
 										break
 									case 'claude-instant-v1-100k':
-										newModel = 'gpt-3.5-turbo'
+										newModel = 'gpt-3.5-turbo-16k'
 										break
 								}
 								setModel(newModel)
@@ -689,7 +689,7 @@ function FigChat() {
 								fill={{r: 0, g: 0, b: 0, a: 0.4}}
 							>
 								{{
-									'gpt-3.5-turbo': 'GPT-3.5',
+									'gpt-3.5-turbo-16k': 'GPT-3.5',
 									'gpt-4': 'GPT-4',
 									'claude-v1-100k': 'Claude v1',
 									'claude-instant-v1-100k':
@@ -863,7 +863,7 @@ function FigChat() {
 
 							// Rotate model
 							switch (model) {
-								case 'gpt-3.5-turbo':
+								case 'gpt-3.5-turbo-16k':
 									newModel = 'gpt-4'
 									break
 								case 'gpt-4':
@@ -873,7 +873,7 @@ function FigChat() {
 									newModel = 'claude-instant-v1-100k'
 									break
 								case 'claude-instant-v1-100k':
-									newModel = 'gpt-3.5-turbo'
+									newModel = 'gpt-3.5-turbo-16k'
 									break
 							}
 							setModel(newModel)
@@ -906,7 +906,7 @@ function FigChat() {
 							}}
 						>
 							{{
-								'gpt-3.5-turbo': 'GPT-3.5',
+								'gpt-3.5-turbo-16k': 'GPT-3.5',
 								'gpt-4': 'GPT-4',
 								'claude-v1-100k': 'Claude v1',
 								'claude-instant-v1-100k': 'Claude Instant v1'
