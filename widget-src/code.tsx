@@ -200,6 +200,10 @@ function FigChat() {
 					{
 						option: 'claude-instant-v1-100k',
 						label: 'Claude Instant v1'
+					},
+					{
+						option: 'claude-2',
+						label: 'Claude v2'
 					}
 				],
 				selectedOption: model
@@ -693,7 +697,8 @@ function FigChat() {
 									'gpt-4': 'GPT-4',
 									'claude-v1-100k': 'Claude v1',
 									'claude-instant-v1-100k':
-										'Claude Instant v1'
+										'Claude Instant v1',
+									'claude-2': 'Claude v2'
 								}[model] ?? 'Unknown'}
 							</Text>
 						</AutoLayout>
@@ -909,7 +914,8 @@ function FigChat() {
 								'gpt-3.5-turbo': 'GPT-3.5',
 								'gpt-4': 'GPT-4',
 								'claude-v1-100k': 'Claude v1',
-								'claude-instant-v1-100k': 'Claude Instant v1'
+								'claude-instant-v1-100k': 'Claude Instant v1',
+								'claude-2': 'Claude v2'
 							}[model] ?? 'Unknown'}
 						</Text>
 					</AutoLayout>
